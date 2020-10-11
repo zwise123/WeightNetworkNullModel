@@ -33,13 +33,21 @@ edgesCount = len(G0.edges())
 # nx.write_edgelist(G0_weightrandom,'weight_equal.csv')
 
 # ------------------------有倾向性断边重连的加权无向网络零模型----------------------------------
-strengh = []
-Gs=G0.degree(weight='weight')
-for i in Gs:
-    strengh.append(i[1])
-num=50
-strengh.sort(reverse=True)
-k=strengh[num]
-G0_rich = ws.rich_club(G0,k,100*edgesCount) #面向富人俱乐部的零模型
+# strengh = []
+# Gs=G0.degree(weight='weight')
+# for i in Gs:
+#     strengh.append(i[1])
+# num=50
+# strengh.sort(reverse=True)
+# k=strengh[num]
+# G0_rich = ws.rich_club(G0,k,100*edgesCount) #面向富人俱乐部的零模型
+# nx.write_edgelist(G0_rich,'rich_club.csv')
+# G0_rich_break = ws.rich_club_break(G0,k,100*edgesCount)
+# nx.write_edgelist(G0_rich_break,'rich_club_break.csv')
 
+#面对强度匹配特性的零模型
+G0_assort = ws.assort_mixing(G0,nswap=2*edgesCount,max_tries=100*edgesCount)
+nx.write_edgelist(G0_assort,'G0_assort.csv')
 
+G0_dissort = ws.disassort_mixing(G0,nswap=2*edgesCount,max_tries=100*edgesCount)
+nx.write_edgelist(G0_dissort,'G0_dissort.csv')

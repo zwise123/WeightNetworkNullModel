@@ -11,6 +11,8 @@ fp.close()
 
 G0 = G.to_undirected() #原始网络无向化
 edgesCount = len(G0.edges())
+nx.draw(G0)
+plt.show()
 
 # G0_0k = ws.random_0k(G0,nspw=2*edgesCount,max_tries=100*edgesCount) #零阶随机断边重连零模型
 # nx.write_edgelist(G0_0k,'WeightNetwork_0K.csv')

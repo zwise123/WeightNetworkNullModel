@@ -26,10 +26,10 @@ G0_sr = ws.structure_random(G0,0,nswap=2*edgesCount,max_tries=100*edgesCount) #�
 nx.write_edgelist(G0_sr,'WeightNetwork_sr.csv')
 
 G0_weak = ws.weakEdge_1k(G0) #弱连边1阶零模型
-nx.write_edgelist(G0_weak,'Weak_1k')
+nx.write_edgelist(G0_weak,'Weak_1k.csv')
 
 G0_strong = ws.strong_1k(G0) #强连边1阶零模型
-nx.write_edgelist(G0_strong,'Strong_1k')
+nx.write_edgelist(G0_strong,'Strong_1k.csv')
 
 G0_weightrandom = ws.weight_random(G0,nswap=2*edgesCount,max_tries=100*edgesCount) #权重随机置乱零模型
 nx.write_edgelist(G0_weightrandom,'weight_equal.csv')

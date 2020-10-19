@@ -18,6 +18,11 @@
 ## 样例
 WeightNetworkNullModels.py中0阶随机断边重连零模型主函数
 ~~~python
+import networkx as nx
+import random
+import copy
+import math
+
 #0阶随机断边重连零模型
 def random_0k(G0,nspw=1,max_tries=100): 
     if nspw > max_tries:
@@ -48,6 +53,9 @@ def random_0k(G0,nspw=1,max_tries=100):
 ~~~
 NullModelCall.py中函数调用
 ~~~python
+import networkx as nx
+import WeightNetworkNullModels as ws
+
 G0_0k = ws.random_0k(G0,nspw=2*edgesCount,max_tries=100*edgesCount) #零阶随机断边重连零模型
 nx.write_edgelist(G0_0k,'WeightNetwork_0K.csv')
 ~~~

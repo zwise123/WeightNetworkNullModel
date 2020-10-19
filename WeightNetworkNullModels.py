@@ -4,7 +4,6 @@ Created on Fri Oct 9 15:54:23 2020
 
 @author: zwise
 """
-import matplotlib.pyplot as plt
 import numpy as np
 import networkx as nx
 import random

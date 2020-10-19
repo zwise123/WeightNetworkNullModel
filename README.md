@@ -15,8 +15,11 @@
    * 面向强度匹配特性的零模型
    * 面向全局最优的零模型
 
-## 样例
+## 样例说明
+NullModelCall.py为函数调用文件，WeightNetworkNullModels.py为函数文件
+
 WeightNetworkNullModels.py中0阶随机断边重连零模型主函数
+
 ~~~python
 import networkx as nx
 import random

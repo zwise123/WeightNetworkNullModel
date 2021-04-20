@@ -261,7 +261,7 @@ def rich_club_break(G0, k, max_tries=100):
     if len(G0) < 4:
         raise nx.NetworkXError("Graph has less than four nodes.")
     G = copy.deepcopy(G0)
-    edges = G.edges()
+    edges = list(G.edges())
     nodes = G.nodes()
     rnodes = [e for e in nodes if G.degree(e,weight='weight')>=k]     #全部富节点
     redges = [e for e in edges if e[0] in rnodes and e[1] in rnodes] #网络中已有的富节点和富节点的连边
@@ -286,4 +286,81 @@ def rich_club_break(G0, k, max_tries=100):
             print ('Maximum number of attempts (%s) exceeded '%n)
             break
         n += 1
+    return G
+
+def assort_mixing(G0, nswap=1, max_tries=100):
+    """
+    强度大的边与强度大的边匹配
+    """
+    G = copy.deepcopy(G0)
+    if len(G) < 4:
+        raise nx.NetworkXError("Graph has less than four nodes.")
+    if nswap > max_tries:
+        raise nx.NetworkXError("nswap<max_tries.")
+    breakCount = 0
+    triesCount = 0
+    edges = list(G.edges())
+    while breakCount < max_tries:
+        (u,v),(x,y) = random.sample(edges,2)
+        if len(set([u,v,x,y])) < 4:
+            continue
+        points,weightSum = zip(*sorted(list(G.degree([u,v,x,y],weight='weight')),key=lambda d:d[1],reverse=True))
+        points_list = list(points)
+        a,b,c,d = points_list
+        zip(*sorted(list(G.degree([u, v, x, y], weight='weight')), key=lambda d: d[1], reverse=True))
+        if (a, b) not in edges and (b, a) not in edges and (c, d) not in edges and (d, c) not in edges:
+            G.add_edges_from([(a, b), (c, d)])
+            G[a][b]['weight'] = G[u][v]['weight']
+            G[c][d]['weight'] = G[x][y]['weight']
+            G.remove_edges_from([(u, v), (x, y)])
+            edges.extend([(a, b), (c, d)])
+            edges.remove((u, v))
+            edges.remove((x, y))
+            breakCount += 1
+        if  triesCount>= max_tries:
+            e = ('Maximum number of swap attempts (%s) exceeded ' % triesCount +
+                 'before desired swaps achieved (%s).' % nswap)
+            print(e)
+            break
+        triesCount += 1
+    return G
+
+def disassort_mixing(G0,nswap=1,max_tries=100): #异配
+    """
+    强度大的节点和强度小的节点相连
+    :param G0:
+    :param nswap:
+    :param max_tries:
+    :return:
+    """
+    if nswap>max_tries:
+        raise nx.NetworkXError("Number of swaps > number of tries allowed.")
+    if len(G0) < 4:
+        raise nx.NetworkXError("Graph has less than four nodes.")
+    G = copy.deepcopy(G0)
+    triesCount = 0
+    breakCount = 0
+    edges = list(G.edges())
+    while breakCount < nswap:
+        (u,v),(x,y) = random.sample(edges,2) #任选两条边
+        if len(set([u,v,x,y]))<4:
+            continue
+        points,weightSum = zip(*sorted(G.degree([u,v,x,y],weight='weight'),key=lambda d:d[1],reverse=True))
+        points_list = list(points)
+        a,b,c,d = points_list
+        if (a,d) not in edges and (d,a) not in edges and (c,b) not in edges and (b,c)not in edges:
+            G.add_edges_from([(a,d),(b,c)])
+            G[a][d]['weight'] = G[u][v]['weight']
+            G[b][c]['weight'] = G[x][y]['weight']
+            G.remove_edges_from([(u,v),(x,y)])
+            edges.extend([(a,d),(b,c)])
+            edges.remove((u,v))
+            edges.remove((x,y))
+            breakCount += 1
+        if triesCount >= max_tries:
+            e=('Maximum number of swap attempts (%s) exceeded '%triesCount +
+            'before desired swaps achieved (%s).'%nswap)
+            print (e)
+            break
+        triesCount += 1
     return G

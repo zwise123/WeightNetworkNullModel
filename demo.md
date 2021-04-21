@@ -1,16 +1,16 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Oct 9 15:54:23 2020
+#  加权无向网络零模型demo
 
-@author: zwise
-"""
-import numpy as np
-import networkx as nx
-import random
-import copy
-import math
+原始网络数据文件：USAir97.txt，函数调用代码文件：NullModelCall.py,函数代码文件：WeightNetworkNullModels.py，详细理论说明：Algorithm_description.pdf
 
+算法说明：每个零模型代码调用之后都可以生成一个对应的零模型数据文件，以csv的格式写在了当前路径下
 
+##  一、基于随机断边重连的加权无向网络零模型
+
+### 1.  0阶随机断边重连零模型
+
+函数：
+
+~~~python
 def random_0k(G0,nspw=1,max_tries=100): #0阶随机断边重连零模型
     if nspw > max_tries:
         raise nx.NetworkXError("nspw > max_tries")
@@ -37,8 +37,22 @@ def random_0k(G0,nspw=1,max_tries=100): #0阶随机断边重连零模型
             break
         triesCount +=1
     return G
+~~~
+
+调用：
+
+~~~python
+G0_0k = ws.random_0k(G0,nspw=2*edgesCount,max_tries=100*edgesCount) #零阶随机断边重连零模型
+nx.write_edgelist(G0_0k,'WeightNetwork_0K.csv')
+~~~
 
 
+
+###  2.  1阶随机断边重连零模型
+
+函数：
+
+```python
 def random_1k(G0,nswap=1,max_tries=100):    #1阶随机断边重连零模型
     if nswap >max_tries:
         raise nx.NetworkXError('"nswap > max_tries"')
@@ -69,8 +83,22 @@ def random_1k(G0,nswap=1,max_tries=100):    #1阶随机断边重连零模型
             break
         triesCount +=1
     return G
+```
+
+调用：
+
+```
+G0_1k = ws.random_1k(G0,nswap=2*edgesCount,max_tries=100*edgesCount) #1阶随机断边重连零模型
+nx.write_edgelist(G0_1k,'WeightNetwork_1K.csv')
+```
 
 
+
+###  3.  结构随机置乱零模型
+
+函数：
+
+```python
 def structure_random(G0,delta=0,nswap=1,max_tries=100): #结构随机置乱零模型
     """"
     任取两个权重相同的连边，断边进行互连
@@ -105,14 +133,21 @@ def structure_random(G0,delta=0,nswap=1,max_tries=100): #结构随机置乱零�
             break
         triesCount+=1
     return G
+```
 
+调用：
 
+```python
+G0_sr = ws.structure_random(G0,0,nswap=2*edgesCount,max_tries=100*edgesCount) #结构随机置乱零模型
+nx.write_edgelist(G0_sr,'WeightNetwork_sr.csv')
+```
+
+###  4.  弱连边1阶零模型
+
+函数：
+
+```python
 def weakEdge_1k(G0):#弱连边1阶零模型
-    """
-    设定一个门限值，权重比门限值大的叫做强连边，权重比门限值小的叫做弱连边。
-    在刘波师兄给的代码中，只是简单的把弱连边重新构成了一个只有弱连边的图，但是按照《网络零模型构造及应用》书中，
-    而是把弱连边连接在一起，而且原来的边依然存在的
-    """
     edges = list(G0.edges(data=True)) #一定要加上data=True，不然数据里面会没有权重
     weak_edges=[]
     weight = [] #用来放边权重
@@ -149,7 +184,20 @@ def weakEdge_1k(G0):#弱连边1阶零模型
         G[x][v]['weight'] = weak_edges_random[1][2]['weight']
         G.remove_edges_from([(x,y),(u,v)])
     return G
+```
 
+调用：
+
+```python
+G0_weak = ws.weakEdge_1k(G0) #弱连边1阶零模型
+nx.write_edgelist(G0_weak,'Weak_1k.csv')
+```
+
+###  5.  强连边1阶零模型
+
+函数：
+
+```python
 def strong_1k(G0):  #强连边1阶零模型
     edges = list(G0.edges(data=True))
     weight = []
@@ -187,7 +235,18 @@ def strong_1k(G0):  #强连边1阶零模型
         G[x][v]['weight'] = weak_edges_random[1][2]['weight']
         G.remove_edges_from([(x,y),(u,v)])
     return G
+```
 
+调用：
+
+```python
+G0_strong = ws.strong_1k(G0) #强连边1阶零模型
+nx.write_edgelist(G0_strong,'Strong_1k.csv')
+```
+
+###  6.  权重随机置乱零模型
+
+```python
 def weight_random(G0,nswap=1,max_tries=100):   #权重随机置乱零模型
     G = copy.deepcopy(G0)
     if nswap > max_tries:
@@ -209,47 +268,22 @@ def weight_random(G0,nswap=1,max_tries=100):   #权重随机置乱零模型
             break
         triesCount +=1
     return G
+```
 
-def rich_club(G0,k,max_tries=100):    #面向富人俱乐部的零模型
-    """
-    将强度大的节点定义为富节点
-    强度s：节点连边权重之和
-    :param G0:
-    :return:
-    """
-    if len(G0) < 4:
-        raise nx.NetworkXError("Graph has less than four nodes.")
-    G = copy.deepcopy(G0)
-    edges = list(G.edges())
-    nodes = G.nodes()
-    rnodes = [
-        e for e in nodes if G.degree(e,weight='weight')>=k
-    ]   #全部富节点
-    len_redges = len([e for e in edges if e[0] in rnodes and e[1] in rnodes])
-    len_possible_redges = len(rnodes)*(len(rnodes)-1)/2
-    n = 0
-    while len_redges < len_possible_redges:
-        u,x = random.sample(rnodes,2)
-        #在富节点中，寻找强度小于k的连边
-        candidate_v = [e for e in list(G[u]) if G.degree(e,weight='weight')<k]
-        candidate_y = [e for e in list(G[x]) if G.degree(e,weight='weight')<k]
-        if candidate_v !=[] and candidate_y != []:
-            v = random.choice(candidate_v)
-            y = random.choice(candidate_y)
-            if len(set([u,v,x,y])) < 4:#防止自环
-                continue
-            if (x not in G[u]) and (y not in G[v]):
-                G.add_edges_from([(u,x),(v,y)])
-                G[u][x]['weight'] = G[u][v]['weight']
-                G[v][y]['weight'] = G[x][y]['weight']
-                G.remove_edges_from([(u,v),(x,y)])
-                len_redges +=1
-        if n >= max_tries:
-            print('Maximum number of attempts (%s) exceeded' %n)
-            break
-        n +=1
-    return G
+调用：
 
+```python
+G0_weightrandom = ws.weight_random(G0,nswap=2*edgesCount,max_tries=100*edgesCount) #权重随机置乱零模型
+nx.write_edgelist(G0_weightrandom,'weight_equal.csv')
+```
+
+##  二、有倾向性断边重连的加权无向网络零模型
+
+###  1.  面向富人俱乐部的零模型
+
+​	函数：
+
+```python
 def rich_club_break(G0, k, max_tries=100):
     """
     富边：富节点和富节点的连边
@@ -286,8 +320,30 @@ def rich_club_break(G0, k, max_tries=100):
             break
         n += 1
     return G
+```
 
-def assort_mixing(G0, nswap=1, max_tries=100):
+调用：
+
+```python
+strengh = []
+Gs=G0.degree(weight='weight')
+for i in Gs: #将图中节点的强度排序，取第五十个作为阈值，大于阈值的强度的节点称为富节点
+    strengh.append(i[1])
+num=50
+strengh.sort(reverse=True)
+k=strengh[num]
+G0_rich = ws.rich_club(G0,k,100*edgesCount) #面向富人俱乐部的零模型
+nx.write_edgelist(G0_rich,'rich_club.csv')
+G0_rich_break = ws.rich_club_break(G0,k,100*edgesCount)
+nx.write_edgelist(G0_rich_break,'rich_club_break.csv')
+```
+
+###  2.  面向强度匹配特性的零模型
+
+函数：
+
+```python
+def assort_mixing(G0, nswap=1, max_tries=100): #同配
     """
     强度大的边与强度大的边匹配
     """
@@ -363,78 +419,15 @@ def disassort_mixing(G0,nswap=1,max_tries=100): #异配
             break
         triesCount += 1
     return G
+```
 
-def rich_club_creat(G0, k, max_tries=100):
-    """
-    节点的强度 = 节点所有连边的权重值之和
-    根据节点的强度将所有节点分成富节点和非富节点
-    任选两条边(富节点和非富节点的连边)，若富节点间无连边，非富节点间无连边，则断边重连
-    达到最大尝试次数或全部富节点间都有连边，循环结束
-    强度大于k的节点为富节点
-    """
-    if len(G0) < 4:
-        raise nx.NetworkXError("Graph has less than four nodes.")
-    G = copy.deepcopy(G0)
-    edges = list(G.edges())
-    nodes = G.nodes()
-    rnodes = [e for e in nodes if G.degree(e,weight='weight')>=k]     #全部富节点
-    len_redges = len([e for e in edges if e[0] in rnodes and e[1] in rnodes]) #网络中已有的富节点和富节点的连边数
-    len_possible_redges = len(rnodes)*(len(rnodes)-1)/2        #全部富节点间都有连边的边数
-    n = 0
-    while len_redges < len_possible_redges:
-        u,x = random.sample(rnodes,2)                       #任选两个富节点
-        candidate_v = [e for e in list(G[u]) if G.degree(e,weight='weight')<k]
-        candidate_y = [e for e in list(G[x]) if G.degree(e,weight='weight')<k]
-        if candidate_v != [] and candidate_y != []:
-            v = random.choice(candidate_v) #非富节点
-            y = random.choice(candidate_y)          
-            if len(set([u,v,x,y])) < 4: #防止自环           
-                continue
-            if (x not in G[u]) and (y not in G[v]):
-                G.add_edges_from([(u,x),(v,y)])
-                G[u][x]['weight'] = G[u][v]['weight']  
-                G[v][y]['weight'] = G[x][y]['weight'] 
-                G.remove_edges_from([(u,v),(x,y)])
-                len_redges += 1
-        if n >= max_tries:
-            print ('Maximum number of attempts (%s) exceeded '%n)
-            break
-        n += 1
-    return G
+调用：
 
-def rich_club_break(G0, k, max_tries=100):
-    """
-    富边：富节点和富节点的连边
-    非富边：非富节点和非富节点的连边
-    任选两条边(一条富边，一条非富边)，若富节点和非富节点间无连边，则断边重连
-    达到最大尝试次数或无富边或无非富边，循环结束
-    """    
-    if len(G0) < 4:
-        raise nx.NetworkXError("Graph has less than four nodes.")
-    G = copy.deepcopy(G0)
-    edges = list(G.edges())
-    nodes = G.nodes()
-    rnodes = [e for e in nodes if G.degree(e,weight='weight')>=k]     #全部富节点
-    redges = [e for e in edges if e[0] in rnodes and e[1] in rnodes] #网络中已有的富节点和富节点的连边
-    pedges = [e for e in edges if e[0] not in rnodes and e[1] not in rnodes] #网络中已有的非富节点和非富节点的连边
-#    len_redges = len(redges)
-#    len_pedges = len(pedges)
-    n = 0
-    while redges and pedges:
-        u,v = random.choice(redges)              #随机选一条富边
-        x,y = random.choice(pedges)           #随机选一条非富边              
-        if (x,u) not in edges and (u,x) not in edges and (v,y) not in edges and (y,v) not in edges:              
-            G.add_edges_from([(u,x),(v,y)])
-            G[u][x]['weight'] = G[u][v]['weight']  
-            G[v][y]['weight'] = G[x][y]['weight'] 
-            G.remove_edges_from([(u,v),(x,y)])
-            edges.extend([(u,x),(v,y)])
-            edges.remove((u,v))
-            edges.remove((x,y))
-            redges.remove((u,v))
-            pedges.remove((x,y))
-        if n >= max_tries:
-            print ('Maximum number of attempts (%s) exceeded '%n)
-            break
-        n += 1
-    return G
+```python
+#同配
+G0_assort = ws.assort_mixing(G0,nswap=2*edgesCount,max_tries=100*edgesCount)
+nx.write_edgelist(G0_assort,'G0_assort.csv')
+#异配
+G0_dissort = ws.disassort_mixing(G0,nswap=2*edgesCount,max_tries=100*edgesCount)
+nx.write_edgelist(G0_dissort,'G0_dissort.csv')
+```

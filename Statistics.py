@@ -1,5 +1,6 @@
 '''
 topic:统计量的计算
+des:对应《加权网络的常用统计量》论文所编写的代码
 author:zwise
 '''
 import networkx as nx
@@ -7,16 +8,17 @@ import WeightNetworkNullModels as ws
 import matplotlib.pyplot as plt
 import copy
 from networkx.algorithms import cluster as cls
+import time
 
 
 # 节点单位权重的计算
-def avg_weight(G,i):
+def avg_weight(G,node):
     si = G.degree(i,weight='weight')
     ki = G.degree(i)
     return si/ki
 
 #权重分布的差异性yi
-def difference_weight(G,i):
+def difference_weight(G,node):
     si = G.degree(i,weight='weight')
     yi = 0.0
     for node in G[i]:
@@ -37,7 +39,7 @@ def matching_coefficient_r(G):
         kj = G.degree(edge[1])
         kikj_sum += ki*kj
         ki_sum_kj += ki+kj
-        ki_2_kj_2_sum += ki**2 + kj**2
+        ki_2_kj_2_sum += ki**2 + kj**2        
     M_rl = 1/M #M(图总边数)的倒数
     r = (M_rl*kikj_sum-(M_rl*0.5*ki_sum_kj)**2)/(M_rl*0.5*ki_2_kj_2_sum-(M_rl*0.5*ki_sum_kj)**2) #计算公式
     return r
@@ -57,7 +59,7 @@ def matching_coefficient_rw1(G):
         kikjwij_sum += ki*kj*wij
         ki_sum_kj_wij += wij*(ki+kj)
         ki_2_kj_2_wij_sum += (ki**2+kj**2)*wij
-
+    print(kikjwij_sum,ki_sum_kj_wij,ki_2_kj_2_wij_sum)
     H_rl = 1/H  # H(总权重)的倒数
     rw1 = (H_rl*kikjwij_sum-(H_rl*0.5*ki_sum_kj_wij)**2)/(H_rl*0.5*ki_2_kj_2_wij_sum-(H_rl*0.5*ki_sum_kj_wij)**2)
     return rw1
@@ -101,56 +103,57 @@ def avg_neigh_kwi(G,i):
     kwnni = wijkj_sum/si
     return kwnni
 
-# 最短路径长度
-def shortest(G):
-    pass
+# 最短路径长度network有具体的方法https://www.osgeo.cn/networkx/reference/algorithms/shortest_paths.html
+    
+# 富人俱乐部系数 networkx有自带的求富人俱乐部系数的函数，它返回的是k取所有可能值的情况
+def rich_club_coefficient(G,k):
+    """
+    Parameters
+    ----------
+    G : 网络图
+    k : 度。节点度大于等于k的称为富节点，否则为非富节点
+    """
+    edges = list(G.edges())
+    nodes = list(G.nodes())
+    nodesk = [i for i in nodes if G.degree(i) >= k]
+    Ek = len([e for e in edges if e[0] in nodesk and e[1] in nodesk])
+    Nk = len(nodesk)
+    if (Nk*(Nk-1)) == 0:
+        raise nx.NetworkXError("分母为零")
+    print(Ek)
+    print(Nk)
+    return (2*Ek)/(Nk*(Nk-1))
 
 
-
-# 1.5聚类系数
-def clustering_coefficient(G):
-    td_iter = cls._directed_weighted_triangles_and_degree_iter(G, nodes=None, weight=None)
-    for v, dt, db, t in td_iter:
-        print(v,dt,db,t)
-
-
-
-fp = open('USAir97.txt','rb')
-G = nx.read_weighted_edgelist(fp)   #原始网络数据读取
-fp.close()
-G0 = G.to_undirected() #原始网络无向化
-edgesCount = len(G0.edges())
-
-clustering_coefficient(G0)
-
-# yi = difference_weight(G0,'3') #权重分布的差异性yi
-# r = matching_coefficient_r(G0) #无权网络匹配系数r
-# print(r)
-# rw1 = matching_coefficient_rw1(G0) #加权网络匹配系数rw1
-# print(rw1)
-# rw2 = matching_coefficient_rw2(G0) #加权网络匹配系数rw2
-# print(rw2)
-# knni = avg_neigh_ki(G0,'1') #邻居节点的平均度knni
-# print(knni)
-# kwnni = avg_neigh_kwi(G0,'1') # 最近邻节点权重的平均
-# print(kwnni)
-
-
-
-# G0_0k = ws.random_0k(G0,nspw=2*edgesCount,max_tries=100*edgesCount) #零阶随机断边重连零模型
-# ki = G0.degree('1')#度
-# ki = G0.degree('1')
-# ki_0k = G0_0k.degree('1')
-# si = G0.degree('1',weight='weight')#强度
-# si_0k = G0_0k.degree('1',weight='weight')
-# ui = si/ki#单位权重
-# ui_0k = si_0k/ki_0k
-# print('原始网络节点1的度：',G0.degree('1'))
-# print('0阶随机断边重连零模型之后节点1的度：',G0_0k.degree('1'))
-# print('原始网络节点1的强度：',G0.degree('1',weight='weight'))
-# print('0阶随机断边重连零模型之后节点1的强度',G0_0k.degree('1',weight='weight'))
-# print('原网络单位权重',avg_weight(G0,'1'))
-# print('0阶随机断边重连零模型单位权重',ui_0k)
-# print('1和2节点之间的权重',G0[1][2]['weight'])
-
-
+###xxx
+#加权网络富人俱乐部系数
+def rich_club_coefficient_weight(G,r):
+    """
+    用于加权网络判断图是否有富人俱乐部效应
+    Parameters
+    ----------
+    G:网络图
+    r:强度值。节点强度大于等于r的称为富节点，否则为非富节点
+    Returns float
+    -------
+    None.
+    """
+    Wr = 0
+    Wl_rank = 0
+    nodes = list(G.nodes())
+    edges = list(G.edges(data=True))
+    importance_nodes = [i for i in nodes if G.degree(i,weight = 'weight') >= r]
+    importance_edges = [e for e in edges if e[0] in importance_nodes and e[1] in importance_nodes]
+    for e in importance_edges:
+        Wr += G[e[0]][e[1]]['weight']
+    # for i in edges:
+        # print(i[2]['weight'])
+    weight = []
+    for i in edges:
+        weight.append(i[2]['weight'])
+    weight.sort(reverse=True)
+    for i in range(len(importance_edges)):
+        Wl_rank += weight[i]
+    return Wr/Wl_rank
+    
+    

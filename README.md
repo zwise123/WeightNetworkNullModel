@@ -25,4 +25,4 @@
 在NullModel_demo.ipynb文件中有整个程序的运行演示以及说明。
 
 ## 加权统计量
-  加权统计量计算在Statistics.py文件中
+  加权统计量计算在Statistics.py文件中。

@@ -22,4 +22,4 @@
    *  assort_mixing、disassort_mixing-面向强度匹配特性的零模型   
 
 
-在demo.md文件中有整个程序的运行演示以及说明。
+在NullModel_demo.ipynb文件中有整个程序的运行演示以及说明。
